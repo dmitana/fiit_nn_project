@@ -1,7 +1,7 @@
 # Proposal
 
 ## Motivation
-In this project we will solve object detection task. Object detection deals 
+In this project we will solve an object detection task. Object detection deals 
 with detection of multiple objects in one picture. This task gains more 
 importance as more smart solutions like autonomous cars, surveillance drones 
 in cases of disasters or in mobile applications are being used every day.
