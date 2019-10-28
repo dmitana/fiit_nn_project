@@ -14,3 +14,11 @@ $ docker build -t fiit_nn_project/tensorflow:2.0.0-gpu-py3-jupyter .
 $ cd ..
 $ docker run --gpus all -u $(id -u):$(id -g) -p 8888:8888 -p 6006:6006 -v $(pwd):/tf/fiit_nn_project -it --name fiit_nn_project fiit_nn_project/tensorflow:2.0.0-gpu-py3-jupyter
 ```
+
+3. (Optional) To mount data folder if not in the same directory
+```sh
+$ mkdir data
+$ sudo vim /etc/fstab
+# Append: <data-directory> <project-directory>/data none bind
+$ sudo mount -a
+```
