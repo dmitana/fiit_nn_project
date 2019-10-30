@@ -1,10 +1,18 @@
 FROM tensorflow/tensorflow:2.0.0-gpu-py3-jupyter
 
+# Install linux packages
+RUN apt-get update --fix-missing && apt-get install -y \
+    git
+
 # Install python packages
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir pandas && \ 
-    pip install --no-cache-dir seaborn && \ 
-    pip install --no-cache-dir sklearn && \ 
+    pip install --no-cache-dir Cython && \
+    pip install --no-cache-dir git+https://github.com/philferriere/cocoapi.git#subdirectory=PythonAPI && \
+    pip install --no-cache-dir pandas && \
+    pip install --no-cache-dir seaborn && \
+    pip install --no-cache-dir sklearn && \
+    pip install --no-cache-dir pillow && \
+    pip install --no-cache-dir tqdm && \
     pip install --no-cache-dir jupyter_contrib_nbextensions
 
 # Install jupyter nbextension and enable used extension
