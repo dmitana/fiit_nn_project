@@ -65,10 +65,14 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
     c = COCO(annotation_file=anns_file_path)
     x, y = [], []
     print(f'Loading {len(imgs_filenames)} images and annotations.')
-    for img_filename in tqdm(imgs_filenames):
+    for i, img_filename in enumerate(tqdm(imgs_filenames)):
         # Load image
         img_file_path = os.path.join(imgs_dir_path, img_filename)
-        x.append(mpimg.imread(img_file_path))
+        img = mpimg.imread(img_file_path)
+        if len(img.shape) == 2:
+            img = np.stack((img,) * 3, axis=-1)
+        (height, width, _) = img.shape
+        x.append(img)
 
         # Load annotations
         img_id = int(img_filename[:-4])
@@ -77,7 +81,17 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
         anns = c.loadAnns(ids=ann_ids)
         for ann in anns:
             label = c.loadCats(ids=[ann['category_id']])[0]['name']
-            ann_list.append([ann['bbox'], label])
+            bbox = ann['bbox']
+
+            # Scale bbox x, y, width, height
+            bbox = [
+                bbox[0] / width,
+                bbox[1] / height,
+                bbox[2] / width,
+                bbox[3] / height
+            ]
+
+            ann_list.append([bbox, label])
         y.append(ann_list)
 
     # Save dataset to .npz
