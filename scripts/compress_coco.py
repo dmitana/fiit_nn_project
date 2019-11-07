@@ -40,10 +40,18 @@ parser.add_argument(
     help='Number of examples to be placed to the dataset. If not '
          'provided then all examples will be included.'
 )
+parser.add_argument(
+    '-c', '--categories',
+    nargs='*',
+    default=None,
+    help='List of categories of objects separated by space which '
+         'image has to contain to be added to compressed dataset.'
+         'If not provided then all categories will be included.'
+)
 
 
 def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
-                  n_examples=None):
+                  n_examples=None, categories=None):
     """
     Compress given COCO dataset to more readable format.
 
@@ -56,43 +64,66 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
     :param n_examples: str (default: None), number of examples to be
         placed to the dataset. If `None` then all examples will be
         included.
+    :param categories: list, only categories from this list will be
+        added to compressed dataset.
     :return: str, path to the compressed dataset.
     """
     imgs_filenames = sorted(os.listdir(imgs_dir_path))
-    if n_examples:
-        imgs_filenames = imgs_filenames[:n_examples]
 
     c = COCO(annotation_file=anns_file_path)
     x, y = [], []
-    print(f'Loading {len(imgs_filenames)} images and annotations.')
-    for i, img_filename in enumerate(tqdm(imgs_filenames)):
-        # Load image
-        img_file_path = os.path.join(imgs_dir_path, img_filename)
-        img = mpimg.imread(img_file_path)
-        if len(img.shape) == 2:
-            img = np.stack((img,) * 3, axis=-1)
-        (height, width, _) = img.shape
-        x.append(img)
 
-        # Load annotations
-        img_id = int(img_filename[:-4])
-        ann_list = []
-        ann_ids = c.getAnnIds(imgIds=[img_id])
-        anns = c.loadAnns(ids=ann_ids)
-        for ann in anns:
-            label = c.loadCats(ids=[ann['category_id']])[0]['name']
-            bbox = ann['bbox']
+    if n_examples:
+        print(f'Loading {n_examples} images and annotations.')
+    else:
+        print(f'Loading {len(imgs_filenames)} images and annotations.')
 
-            # Scale bbox x, y, width, height
-            bbox = [
-                bbox[0] / width,
-                bbox[1] / height,
-                bbox[2] / width,
-                bbox[3] / height
-            ]
+    if categories is not None:
+        print(f'Picking following categories: {categories}')
 
-            ann_list.append([bbox, label])
-        y.append(ann_list)
+    tqdm_len = n_examples if n_examples else len(imgs_filenames)
+    with tqdm(total=tqdm_len) as pbar:
+        for i, img_filename in enumerate(imgs_filenames):
+            # Load image
+            img_file_path = os.path.join(imgs_dir_path, img_filename)
+            img = mpimg.imread(img_file_path)
+            if len(img.shape) == 2:
+                img = np.stack((img,) * 3, axis=-1)
+            (height, width, _) = img.shape
+
+            # Load annotations
+            img_id = int(img_filename[:-4])
+            ann_list = []
+            ann_ids = c.getAnnIds(imgIds=[img_id])
+            anns = c.loadAnns(ids=ann_ids)
+            for ann in anns:
+                label = c.loadCats(ids=[ann['category_id']])[0]['name']
+                if categories is not None and label not in categories:
+                    continue
+
+                bbox = ann['bbox']
+
+                # Scale bbox x, y, width, height
+                bbox = [
+                    bbox[0] / width,
+                    bbox[1] / height,
+                    bbox[2] / width,
+                    bbox[3] / height
+                ]
+
+                ann_list.append([bbox, label])
+
+            if len(ann_list) > 0:
+                x.append(img)
+                y.append(ann_list)
+                pbar.update(1)
+
+            if n_examples and len(x) == n_examples:
+                break
+
+    if categories is not None:
+        print(f'Found {len(y)} images which contain some of following '
+              f'objects: {categories}')
 
     # Save dataset to .npz
     if not os.path.isdir(target_dir):
@@ -111,6 +142,7 @@ if __name__ == '__main__':
         'anns_file_path': args.anns_file_path,
         'target_dir': args.target_dir,
         'name': args.name,
-        'n_examples': args.n_examples
+        'n_examples': args.n_examples,
+        'categories': args.categories
     }
     compress_coco(**opts)
