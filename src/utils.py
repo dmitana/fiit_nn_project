@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -64,3 +65,31 @@ def middle_point_from_bbox(bbox):
         x + width / 2,
         y + height / 2
     )
+
+
+def is_point_in_bbox(bbox, point):
+    """
+    Check if the point is in the bounding box.
+
+    :param bbox: tuple, (x, y, width, height) of the bounding box.
+    :param point: tuple, (x, y) point to be decided.
+    :return: bool, `True` if the `point` is in the `bbox` otherwise
+        `False`.
+    """
+    (x, y, width, height) = bbox
+    (point_x, point_y) = point
+
+    if x <= point_x <= x + width and y <= point_y <= y + height:
+        return True
+
+
+def encode_category(categories, category):
+    """
+    Encode `category` into one-hot vector.
+
+    :param categories: np.array dim=(n_categories), string vector of
+        categories.
+    :param category: str, category to be encoded.
+    :return: np.array dim=(n_categories), one-hot vector of `category`.
+    """
+    return np.array(categories == category, dtype=np.float32)
