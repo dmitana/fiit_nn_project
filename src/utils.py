@@ -50,3 +50,17 @@ def plot_img_with_bboxes(img, anns, show_category=True, grid=None):
             ax.axhline(point_y, color='red')
         for point_x in range(0, img_width, width_step):
             ax.axvline(point_x, color='red')
+
+
+def middle_point_from_bbox(bbox):
+    """
+    Get middle point of the given bounding box.
+
+    :param bbox: tuple, (x, y, width, height) of the bounding box.
+    :return: tuple, (x, y) middle point of the given bounding box.
+    """
+    (x, y, width, height) = bbox
+    return (
+        x + width / 2,
+        y + height / 2
+    )

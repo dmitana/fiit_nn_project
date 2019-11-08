@@ -1,4 +1,7 @@
 import tensorflow as tf
+import numpy as np
+from src.utils import middle_point_from_bbox
+
 
 def resize_images(images, size):
     """
@@ -20,3 +23,23 @@ def resize_images(images, size):
             )
         )
     return tf.convert_to_tensor(images_new)
+
+
+def calculate_bboxes_middle_points(y):
+    """
+    Calculate middle points of bounding boxes in annotations.
+
+    :param y: np.array dim=(n_images,) of list of annotations,
+        annotations.
+    :return: np.array dim=(n_images,) of list of annotations,
+        annotations with middle points for each bounding box.
+    """
+    new_y = []
+    for anns in y:
+        new_anns = []
+        for ann in anns:
+            middle_point = middle_point_from_bbox(ann[0])
+            new_ann = [ann[0], ann[1], middle_point]
+            new_anns.append(new_ann)
+        new_y.append(new_anns)
+    return np.array(new_y)
