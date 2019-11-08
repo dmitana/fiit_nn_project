@@ -67,6 +67,24 @@ def middle_point_from_bbox(bbox):
     )
 
 
+def bbox_from_middle_point(middle_point, width, height):
+    """
+    Retrieve the bounding box from it's middle point.
+
+    :param middle_point: tuple, (x, y) middle point of the bounding box.
+    :param width: float, width of the bounding box.
+    :param height: float, height of the bounding box.
+    :return: tuple, (x, y, width, height) of the bounding box.
+    """
+    (x, y) = middle_point
+    return (
+        x - width / 2,
+        y - height / 2,
+        width,
+        height
+    )
+
+
 def is_point_in_bbox(bbox, point):
     """
     Check if the point is in the bounding box.
@@ -93,3 +111,16 @@ def encode_category(categories, category):
     :return: np.array dim=(n_categories), one-hot vector of `category`.
     """
     return np.array(categories == category, dtype=np.float32)
+
+
+def decode_category(categories, encoded_category):
+    """
+    Decode one-hot vector `encoded_category` into string.
+
+    :param categories: np.array dim=(n_categories), string vector of
+        categories.
+    :param encoded_category: np.array dim=(n_categories), one-hot
+        vector of category.
+    :return: str, decoded category.
+    """
+    return categories[np.argmax(encoded_category)]
