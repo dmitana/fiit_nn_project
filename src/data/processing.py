@@ -144,7 +144,7 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories):
                 yolo = [0.0] * (5 + len(categories))
             yolo_arr.append(yolo)
         grid_arr.append(yolo_arr)
-    return np.array(grid_arr)
+    return np.array(grid_arr, dtype=np.float32)
 
 
 def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories):
