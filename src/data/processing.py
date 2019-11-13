@@ -155,7 +155,7 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories=None):
     return np.array(grid_arr, dtype=np.float32)
 
 
-def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories):
+def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None):
     """
     Decode annotations in the YOLO format to default annotation format.
 
@@ -164,8 +164,9 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories):
     :param img_size: tuple, (img_height, img_width) of each image.
     :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
         cell.
-    :param categories: np.array dim=(n_categories), string vector of
-        categories.
+    :param categories: np.array dim=(n_categories) (default: None),
+        string vector of categories. If `None` then there will be only
+        bounding boxes, without category labels.
     :return: np.array dim=(n_images,) of list of annotations,
         annotations.
     """
@@ -188,7 +189,8 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories):
                     img_size,
                     grid
                 )
-                category = decode_category(categories, col[5:])
+                category = '' if categories is None else \
+                    decode_category(categories, col[:5])
                 anns.append([bbox, category, middle_point])
     return anns
 
