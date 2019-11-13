@@ -100,7 +100,7 @@ def _decode_yolo_grid_bbox(yolo_grid_bbox, img_size, grid):
     )
 
 
-def encode_anns_to_yolo(anns, img_size, grid_size, categories):
+def encode_anns_to_yolo(anns, img_size, grid_size, categories=None):
     """
     Encode annotations to the YOLO format.
 
@@ -109,8 +109,9 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories):
     :param img_size: tuple, (img_height, img_width) of each image.
     :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
         cell.
-    :param categories: np.array dim=(n_categories), string vector of
-        categories.
+    :param categories: np.array dim=(n_categories) (default: None),
+        string vector of categories. If `None` then there will be only
+        bounding boxes, without category labels.
     :return: np.array dim=(grid_height, grid_width, 5 + n_categories),
         annotations in the YOLO format.
     """
@@ -118,6 +119,8 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories):
     (grid_rows, grid_cols) = grid_size
     grid_height = int(img_height / grid_rows)
     grid_width = int(img_width / grid_cols)
+
+    categories_len = 0 if categories is None else len(categories)
 
     grid_arr = []
     for grid_y in range(0, img_height, grid_height):
@@ -129,19 +132,24 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories):
             for ann in anns:
                 middle_point = (ann[2][0] * img_width, ann[2][1] * img_height)
 
-                if ann[1] in categories and \
-                        is_point_in_bbox(grid, middle_point):
+                if (categories is None or ann[1] in categories) \
+                        and is_point_in_bbox(grid, middle_point):
+
                     yolo_grid_bbox = _encode_yolo_grid_bbox(
                         ann[2],
                         ann[0][2:],
                         img_size,
                         grid
                     )
-                    encoded_category = encode_category(categories, ann[1])
+
+                    encoded_category = []
+                    if categories is not None:
+                        encoded_category = encode_category(categories, ann[1])
+
                     yolo = [1.0, *yolo_grid_bbox, *encoded_category]
                     break
             else:
-                yolo = [0.0] * (5 + len(categories))
+                yolo = [0.0] * (5 + categories_len)
             yolo_arr.append(yolo)
         grid_arr.append(yolo_arr)
     return np.array(grid_arr, dtype=np.float32)
