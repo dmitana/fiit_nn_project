@@ -191,3 +191,39 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories):
                 category = decode_category(categories, col[5:])
                 anns.append([bbox, category, middle_point])
     return anns
+
+
+def input_fn(imgs, anns, is_training=True, batch_size=16):
+    """
+    Data pipeline using TensorFlow Dataset class.
+
+    :param imgs: np.array dim=(n_images, height, width, n_channels),
+        images.
+    :param anns: np.array dim=(grid_height, grid_width, 5 +
+        n_categories), annotations in the YOLO format.
+    :param is_training: bool (default: True), whether it's train
+        dataset or not. If it's train then perform shuffle and repeat
+        otherwise no.
+    :param batch_size: int (default: 16), batch size of dataset.
+    :return: Dataset dim=((None, 260, 260, 3), (None, 13, 13, 6))
+    """
+
+    # Normalize to (0.0, 1.0)
+    imgs = imgs / 255
+
+    dataset = tf.data.Dataset.from_tensor_slices((imgs, anns))
+
+    # Shuffle and repeat
+    if is_training:
+        dataset = dataset.shuffle(buffer_size=len(anns)).repeat()
+
+    # Batch
+    dataset = dataset.batch(
+        batch_size,
+        drop_remainder=False
+    )
+
+    # Prefetch
+    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+    return dataset
