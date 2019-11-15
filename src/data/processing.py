@@ -57,7 +57,7 @@ def _encode_yolo_grid_bbox(middle_point, bbox_resolution, img_size, grid):
     :param img_size: tuple, (img_height, img_width) of each image.
     :param grid: tuple, (grid_x, grid_y, grid_width, grid_height) of
         the grid cell.
-    :return: tuple, (bx, by, bh, bw) of the YOLO grid bounding box.
+    :return: tuple, (bx, by, bw, bh) of the YOLO grid bounding box.
     """
     (img_height, img_width) = img_size
     (grid_x, grid_y, grid_width, grid_height) = grid
@@ -67,8 +67,8 @@ def _encode_yolo_grid_bbox(middle_point, bbox_resolution, img_size, grid):
     return (
         (mp_x * img_width - grid_x) / grid_width,
         (mp_y * img_height - grid_y) / grid_height,
-        bbox_height / grid_height,
-        bbox_width / grid_width,
+        bbox_width,  # bbox_width is already scaled to image width
+        bbox_height,  # bbox_height is already scaled to image height
     )
 
 
@@ -76,7 +76,7 @@ def _decode_yolo_grid_bbox(yolo_grid_bbox, img_size, grid):
     """
     Decode the YOLO grid bounding box to the bounding box.
 
-    :param yolo_grid_bbox: tuple, (bx, by, bh, bw) of the YOLO grid
+    :param yolo_grid_bbox: tuple, (bx, by, bw, bh) of the YOLO grid
         bounding box.
     :param img_size: tuple, (img_height, img_width) of each image.
     :param grid: tuple, (grid_x, grid_y, grid_width, grid_height) of
@@ -86,13 +86,13 @@ def _decode_yolo_grid_bbox(yolo_grid_bbox, img_size, grid):
         middle_point: tuple, (x, y) middle point of the bounding box.
     """
     (img_height, img_width) = img_size
-    (bx, by, bh, bw) = yolo_grid_bbox
+    (bx, by, bw, bh) = yolo_grid_bbox
     (grid_x, grid_y, grid_width, grid_height) = grid
 
     mp_x = bx * grid_width + grid_x
     mp_y = by * grid_height + grid_y
     middle_point = (mp_x / img_width, mp_y / img_height)
-    bbox_width, bbox_height = bw * grid_width, bh * grid_height
+    bbox_width, bbox_height = bw, bh
 
     return (
         bbox_from_middle_point(middle_point, bbox_width, bbox_height),
@@ -190,7 +190,7 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None):
                     grid
                 )
                 category = '' if categories is None else \
-                    decode_category(categories, col[:5])
+                    decode_category(categories, col[5:])
                 anns.append([bbox, category, middle_point])
     return anns
 
