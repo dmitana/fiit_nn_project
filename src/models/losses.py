@@ -70,7 +70,7 @@ class YoloLoss(Loss):
         y_pred_wh = pred_boxes[..., 3:]
 
         # XY loss
-        xy_loss = 5 * K.sum(
+        xy_loss = self.l_coord * K.sum(
             K.sum(
                 K.square(y_pred_xy - y_true_xy),
                 axis=-1
@@ -80,7 +80,7 @@ class YoloLoss(Loss):
         )
 
         # WH loss
-        wh_loss = 5 * K.sum(
+        wh_loss = self.l_coord * K.sum(
             K.sum(
                 K.square(K.sqrt(y_pred_wh) - K.sqrt(y_true_wh)),
                 axis=-1
