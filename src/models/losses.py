@@ -61,11 +61,11 @@ class YoloLoss(Loss):
             shape=(-1, self.grid_rows * self.grid_cols, 5)
         )
 
-        y_true_conf = true_boxes[..., 1]
+        y_true_conf = true_boxes[..., 0]
         y_true_xy = true_boxes[..., 1:3]
         y_true_wh = true_boxes[..., 3:]
 
-        y_pred_conf = pred_boxes[..., 1]
+        y_pred_conf = pred_boxes[..., 0]
         y_pred_xy = pred_boxes[..., 1:3]
         y_pred_wh = pred_boxes[..., 3:]
 
@@ -101,12 +101,12 @@ class YoloLoss(Loss):
         union_area = pred_area + true_area - intersect_area
         iou = intersect_area / union_area
 
-        # conf_loss1 = K.sum(K.sum(K.square(y_pred_conf - iou), axis=-1) * y_true_conf, axis=-1)
-        # conf_loss2 = 0.5 * K.sum(K.sum(K.square(y_pred_conf - iou), axis=-1) * (1 - y_true_conf), axis=-1)
-        # conf_loss = conf_loss1 + conf_loss2
-        conf_loss = K.sum(
-            K.square(y_true_conf * iou - y_pred_conf) * y_true_conf,
-            axis=-1
-        )
+        conf_loss1 = K.sum(K.sum(K.square(y_pred_conf - iou), axis=-1) * y_true_conf, axis=-1)
+        conf_loss2 = 0.5 * K.sum(K.sum(K.square(y_pred_conf - iou), axis=-1) * (1 - y_true_conf), axis=-1)
+        conf_loss = conf_loss1 + conf_loss2
+        # conf_loss = K.sum(
+        #     K.square(y_true_conf * iou - y_pred_conf) * y_true_conf,
+        #     axis=-1
+        # )
 
         return xy_loss + wh_loss + conf_loss
