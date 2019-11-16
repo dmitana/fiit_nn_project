@@ -67,7 +67,7 @@ def base_model(grid_size, input_shape=(256, 256, 3), n_categories=0):
     x = Flatten(name='flatten')(x)
     x = Dense(
         units=256,
-        activation='relu',
+        activation='sigmoid',
         name='dense_1',
     )(x)
     x = Dense(
@@ -86,7 +86,7 @@ def base_model(grid_size, input_shape=(256, 256, 3), n_categories=0):
         name='base_model',
     )
     model.compile(
-        optimizer=Adam(learning_rate=0.001),
+        optimizer=Adam(learning_rate=0.0001),
         loss=YoloLoss(grid_size),
     )
 
