@@ -155,7 +155,8 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories=None):
     return np.array(grid_arr, dtype=np.float32)
 
 
-def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None):
+def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None,
+                        confidence_threshold=0.0):
     """
     Decode annotations in the YOLO format to default annotation format.
 
@@ -183,7 +184,7 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None):
             grid_x = j * grid_width
             grid = (grid_x, grid_y, grid_width, grid_height)
 
-            if col[0] > 0.0:
+            if col[0] > confidence_threshold:
                 (bbox, middle_point) = _decode_yolo_grid_bbox(
                     col[1:5],
                     img_size,
