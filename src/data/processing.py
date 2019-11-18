@@ -67,8 +67,8 @@ def _encode_yolo_grid_bbox(middle_point, bbox_resolution, img_size, grid):
     return (
         (mp_x * img_width - grid_x) / grid_width,
         (mp_y * img_height - grid_y) / grid_height,
-        bbox_width * 256 / grid_width,  # bbox_width is already scaled to image width
-        bbox_height * 256 / grid_height,  # bbox_height is already scaled to image height
+        bbox_width * img_width / grid_width,
+        bbox_height * img_height / grid_height,
     )
 
 
@@ -92,7 +92,8 @@ def _decode_yolo_grid_bbox(yolo_grid_bbox, img_size, grid):
     mp_x = bx * grid_width + grid_x
     mp_y = by * grid_height + grid_y
     middle_point = (mp_x / img_width, mp_y / img_height)
-    bbox_width, bbox_height = bw * grid_width / 256, bh * grid_height / 256
+    bbox_width = bw * grid_width / img_width
+    bbox_height = bh * grid_height / img_height
 
     return (
         bbox_from_middle_point(middle_point, bbox_width, bbox_height),
@@ -168,6 +169,8 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None,
     :param categories: np.array dim=(n_categories) (default: None),
         string vector of categories. If `None` then there will be only
         bounding boxes, without category labels.
+    :param confidence_threshold: float (default: 0.0), only annotations
+        where confidence is higher than threshold will be returned.
     :return: np.array dim=(n_images,) of list of annotations,
         annotations.
     """
