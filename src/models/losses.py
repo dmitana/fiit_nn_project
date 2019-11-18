@@ -116,4 +116,5 @@ class YoloLoss(Loss):
         )
         conf_loss = conf_loss1 + conf_loss2
 
-        return xy_loss + wh_loss + conf_loss
+        loss_sum = xy_loss + wh_loss + conf_loss
+        return loss_sum / K.cast(K.shape(y_true)[0], dtype='float32')
