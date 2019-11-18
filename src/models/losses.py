@@ -89,7 +89,6 @@ class YoloLoss(Loss):
             axis=-1
         )
 
-        # TODO: confidence loss looks bugged, test it and fix it
         # Confidence (IoU) loss
         intersect_wh = K.maximum(
             K.zeros_like(y_pred_wh),
@@ -101,12 +100,20 @@ class YoloLoss(Loss):
         union_area = pred_area + true_area - intersect_area
         iou = intersect_area / union_area
 
-        conf_loss1 = K.sum(K.sum(K.square(y_pred_conf - iou) * y_true_conf, axis=-1), axis=-1)
-        conf_loss2 = self.l_noobj * K.sum(K.sum(K.square(y_pred_conf - iou) * (1 - y_true_conf), axis=-1), axis=-1)
+        conf_loss1 = K.sum(
+            K.sum(
+                K.square(y_pred_conf - iou) * y_true_conf,
+                axis=-1
+            ),
+            axis=-1
+        )
+        conf_loss2 = self.l_noobj * K.sum(
+            K.sum(
+                K.square(y_pred_conf - iou) * (1 - y_true_conf),
+                axis=-1
+            ),
+            axis=-1
+        )
         conf_loss = conf_loss1 + conf_loss2
-        # conf_loss = K.sum(
-        #     K.square(y_true_conf * iou - y_pred_conf) * y_true_conf,
-        #     axis=-1
-        # )
 
         return xy_loss + wh_loss + conf_loss
