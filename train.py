@@ -3,8 +3,12 @@ from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
 from src.models.models import base_model
 
+class MyArgumentParser(argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        return arg_line.split()
+
 # Initialize argument parser
-parser = argparse.ArgumentParser(
+parser = MyArgumentParser(
     description='Train an object detection model using YOLO method.',
     fromfile_prefix_chars='@'
 )
