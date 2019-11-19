@@ -107,6 +107,11 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
         l_noobj: float, lambda no object parameter for the YOLO loss
             function. Weight of the one part of the confidence loss.
     :return:
+        model: tf.keras.Model, trained model.
+        history: History, its History.history attribute is a record of
+            training loss values and metrics values at successive
+            epochs, as well as validation loss values and validation
+            metrics values (if applicable).
     """
     train_dataset = create_dataset(
         train_xy[0],
@@ -133,14 +138,15 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
-    # TODO: return history and trained model
     model.summary()
-    model.fit(
+    history = model.fit(
         train_dataset,
         epochs=training_params['epochs'],
         validation_data=val_dataset,
         steps_per_epoch=len(train_xy[1]) // training_params['batch_size']
     )
+
+    return model, history
 
 
 if __name__ == '__main__':
