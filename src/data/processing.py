@@ -105,8 +105,7 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories=None):
     """
     Encode annotations to the YOLO format.
 
-    :param anns: np.array dim=(n_images,) of list of annotations,
-        annotations.
+    :param anns: list of annotations, annotations of one image.
     :param img_size: tuple, (img_height, img_width) of each image.
     :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
         cell.
@@ -171,8 +170,7 @@ def decode_yolo_to_anns(yolo_anns, img_size, grid_size, categories=None,
         bounding boxes, without category labels.
     :param confidence_threshold: float (default: 0.0), only annotations
         where confidence is higher than threshold will be returned.
-    :return: np.array dim=(n_images,) of list of annotations,
-        annotations.
+    :return: list of annotations, annotations of one image.
     """
     (img_height, img_width) = img_size
     (grid_rows, grid_cols) = grid_size
@@ -231,5 +229,33 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
 
     # Prefetch
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+    return dataset
+
+
+def create_dataset(x, y, img_size, grid_size, **kwargs):
+    """
+
+    :param x:
+    :param y:
+    :param img_size:
+    :param grid_size:
+    :param kwargs:
+    :return:
+    """
+
+    new_x = resize_images(x, img_size)
+    new_y = calculate_bboxes_middle_points(y)
+
+    yolo_anns = np.array([
+        encode_anns_to_yolo(anns, img_size, grid_size)
+        for anns in new_y
+    ])
+
+    dataset = input_fn(
+        new_x,
+        yolo_anns,
+        **kwargs,
+    )
 
     return dataset
