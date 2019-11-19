@@ -1,11 +1,17 @@
 import argparse
+import os
+import tensorflow as tf
+from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
 from src.models.models import base_model
+from src.utils import timestamp
+
 
 class MyArgumentParser(argparse.ArgumentParser):
     def convert_arg_line_to_args(self, arg_line):
         return arg_line.split()
+
 
 # Initialize argument parser
 parser = MyArgumentParser(
@@ -30,6 +36,12 @@ parser.add_argument(
     type=str,
     default=None,
     help='File path to the validation dataset file.',
+)
+parser.add_argument(
+    '--logdir',
+    type=str,
+    default=None,
+    help='TensorBoard log directory.'
 )
 
 parser_hparams = parser.add_argument_group('Hyperparameters')
@@ -86,8 +98,8 @@ parser_hparams.add_argument(
 )
 
 
-def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
-          model_params):
+def train(train_xy, val_xy, model_name, img_size, grid_size, log_dir,
+          training_params, model_params):
     """
     Train an object detection model using YOLO method.
 
@@ -98,6 +110,7 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
     :param img_size: tuple, (img_height, img_width) of each image.
     :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
         cell.
+    :param log_dir: str, TensorBoard log directory.
     :param training_params: dict, hyperparameters used for training.
         batch_size: int, number of samples that will be propagated
             through the network.
@@ -117,6 +130,7 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
             epochs, as well as validation loss values and validation
             metrics values (if applicable).
     """
+    # Create train dataset
     train_dataset = create_dataset(
         train_xy[0],
         train_xy[1],
@@ -126,6 +140,7 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
         batch_size=training_params['batch_size']
     )
 
+    # Create validation dataset
     val_dataset = None
     if val_xy is not None:
         val_dataset = create_dataset(
@@ -137,18 +152,46 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
             batch_size=training_params['batch_size']
         )
 
+    # Choose model
     if model_name == 'base_model':
         model = base_model(grid_size, **model_params)
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
+    # Create keras callbacks
+    callbacks = []
+    if log_dir is not None:
+        log_dir = os.path.join(log_dir, timestamp())
+        callbacks.append(
+            tf.keras.callbacks.TensorBoard(
+                log_dir=log_dir,
+                histogram_freq=1,
+                profile_batch=0,
+            )
+        )
+
+    # Train model
     model.summary()
     history = model.fit(
         train_dataset,
         epochs=training_params['epochs'],
         validation_data=val_dataset,
-        steps_per_epoch=len(train_xy[1]) // training_params['batch_size']
+        steps_per_epoch=len(train_xy[1]) // training_params['batch_size'],
+        callbacks=callbacks,
     )
+
+    # TensorBoard HParams saving
+    if log_dir is not None:
+        log_dir_hparams = os.path.join(log_dir, 'hparams')
+        with tf.summary.create_file_writer(log_dir_hparams).as_default():
+            hp.hparams({**training_params, **model_params}, trial_id=log_dir)
+
+            train_best_loss = min(history.history["loss"][-5:])
+            tf.summary.scalar('train_best_loss', train_best_loss, step=0)
+
+            if val_dataset is not None:
+                val_best_loss = min(history.history['val_loss'][-5:])
+                tf.summary.scalar('val_best_loss', val_best_loss, step=0)
 
     return model, history
 
@@ -158,14 +201,15 @@ if __name__ == '__main__':
 
     train_data = load_dataset(args.train_dataset_file_path)
     val_data = None if args.validation_dataset_file_path is None \
-        else load_dataset(args.val_dataset_file_path)
+        else load_dataset(args.validation_dataset_file_path)
 
     train(
-        train_data,
-        val_data,
-        args.model_name,
-        args.img_size,
-        args.grid_size,
+        train_xy=train_data,
+        val_xy=val_data,
+        model_name=args.model_name,
+        img_size=args.img_size,
+        grid_size=args.grid_size,
+        log_dir=args.logdir,
         training_params={
             'batch_size': args.batch_size,
             'epochs': args.epochs

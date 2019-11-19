@@ -1,3 +1,4 @@
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -124,3 +125,12 @@ def decode_category(categories, encoded_category):
     :return: str, decoded category.
     """
     return categories[np.argmax(encoded_category)]
+
+
+def timestamp():
+    """
+    Return timestamp in format Y-m-d-H-M.
+
+    :return: str, string timestamp.
+    """
+    return datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
