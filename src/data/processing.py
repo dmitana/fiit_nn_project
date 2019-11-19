@@ -209,7 +209,8 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
         dataset or not. If it's train then perform shuffle and repeat
         otherwise no.
     :param batch_size: int (default: 16), batch size of dataset.
-    :return: Dataset dim=((None, 260, 260, 3), (None, 13, 13, 6))
+    :return: Dataset dim=((None, img_height, img_width, n_channels),
+        (None, grid_rows, grid_cols, 5 + n_classes)).
     """
 
     # Normalize to (0.0, 1.0)
@@ -235,13 +236,30 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
 
 def create_dataset(x, y, img_size, grid_size, **kwargs):
     """
+    Preprocess given images `x` and annotations `y` and create dataset
+    of them.
 
-    :param x:
-    :param y:
-    :param img_size:
-    :param grid_size:
-    :param kwargs:
-    :return:
+    Preprocessing steps on whole data:
+        1) Resize images to given `img_size`.
+        2) Calculate middle points of bounding boxes.
+        3) Encode annotations to the YOLO format.
+
+    Preprocessing steps in data pipeline:
+        1) Normalize images to 0.0 - 1.0.
+        2) Shuffle.
+        3) Batch.
+        4) Prefetch
+
+    :param x: np.array dim=(n_images, height, width, n_channels),
+        images.
+    :param y: np.array dim=(n_images,) of list of annotations,
+        annotations.
+    :param img_size: tuple, contains new height and width of images.
+    :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
+        cell.
+    :param kwargs: dict, key word parameters of the `input_fn` function.
+    :return: Dataset dim=((None, img_height, img_width, n_channels),
+        (None, grid_rows, grid_cols, 5 + n_classes)).
     """
 
     new_x = resize_images(x, img_size)

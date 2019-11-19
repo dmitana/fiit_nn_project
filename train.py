@@ -5,26 +5,27 @@ from src.models.models import base_model
 
 # Initialize argument parser
 parser = argparse.ArgumentParser(
-    description='',
+    description='Train an object detection model using YOLO method.',
     fromfile_prefix_chars='@'
 )
 parser.add_argument(
     'train_dataset_file_path',
     type=str,
-    help=''
+    help='File path to the train dataset file.'
 )
 parser.add_argument(
     'img_size',
     type=int,
     nargs=2,
-    help=''
+    help='Resolution to which images will be resized in the format '
+         '`height width`.'
 )
 parser.add_argument(
     '-v',
     '--validation-dataset-file-path',
     type=str,
     default=None,
-    help='',
+    help='File path to the validation dataset file.',
 )
 
 parser_hparams = parser.add_argument_group('Hyperparameters')
@@ -32,58 +33,79 @@ parser_hparams.add_argument(
     '--model-name',
     type=str,
     default='base_model',
-    help=''
+    help='Name of the model which will be used for training. '
+         'Possible values are `base_model` (default: %(default)s).'
 )
 parser_hparams.add_argument(
     '--grid-size',
     type=int,
     nargs=2,
     default=(16, 16),
-    help='',
+    help='Resolution of the grid in format `grid_rows grid_cols` '
+         '(default: %(default)s).',
 )
 parser_hparams.add_argument(
     '--batch-size',
     type=int,
     default=16,
-    help='',
+    help='Number of samples that will be propagated through the '
+         'network (default: %(default)s).',
 )
 parser_hparams.add_argument(
     '--epochs',
     type=int,
     default=30,
-    help='',
+    help='Number of forward passes and backward passes of all the '
+         'training examples (default: %(default)s).',
 )
 parser_hparams.add_argument(
     '--learning-rate',
     type=float,
     default=0.001,
-    help='',
+    help='Determines the step size at each iteration step '
+         '(default: %(default)s).',
 )
 parser_hparams.add_argument(
     '--lambda-coordinates',
     type=float,
     default=5.0,
-    help='',
+    help='Lambda coordinates parameter for the YOLO loss function. '
+         'Weight of the XY and WH loss (default: %(default)s).',
 )
 parser_hparams.add_argument(
     '--lambda-no-object',
     type=float,
     default=0.5,
-    help='',
+    help='Lambda no object parameter for the YOLO loss function. '
+         'Weight of the one part of the confidence loss '
+         '(default: %(default)s).',
 )
 
 
 def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
           model_params):
     """
+    Train an object detection model using YOLO method.
 
-    :param train_xy:
-    :param val_xy:
-    :param model_name:
-    :param img_size:
-    :param grid_size:
-    :param training_params:
-    :param model_params:
+    :param train_xy: tuple, train data in the format (imgs, anns).
+    :param val_xy: tuple, validation data in the format (imgs, anns).
+    :param model_name: str, name of the model to be used for training.
+        Possible values are `base_model`.
+    :param img_size: tuple, (img_height, img_width) of each image.
+    :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
+        cell.
+    :param training_params: dict, hyperparameters used for training.
+        batch_size: int, number of samples that will be propagated
+            through the network.
+        epochs: int, number of forward passes and backward passes of
+            all the training examples.
+    :param model_params: dict, hyperparameters of the model.
+        learning_rate: float, determines the step size at each
+            iteration step.
+        l_coord: float, lambda coordinates parameter for the YOLO loss
+            function. Weight of the XY and WH loss.
+        l_noobj: float, lambda no object parameter for the YOLO loss
+            function. Weight of the one part of the confidence loss.
     :return:
     """
     train_dataset = create_dataset(
@@ -111,6 +133,7 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, training_params,
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
+    # TODO: return history and trained model
     model.summary()
     model.fit(
         train_dataset,
