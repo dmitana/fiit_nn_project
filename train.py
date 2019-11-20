@@ -43,6 +43,12 @@ parser.add_argument(
     default=None,
     help='TensorBoard log directory.'
 )
+parser.add_argument(
+    '--modeldir',
+    type=str,
+    default=None,
+    help='Directory where checkpoints of models will be stored.'
+)
 
 parser_hparams = parser.add_argument_group('Hyperparameters')
 parser_hparams.add_argument(
@@ -99,7 +105,7 @@ parser_hparams.add_argument(
 
 
 def train(train_xy, val_xy, model_name, img_size, grid_size, log_dir,
-          training_params, model_params):
+          model_dir, training_params, model_params):
     """
     Train an object detection model using YOLO method.
 
@@ -111,6 +117,8 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, log_dir,
     :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
         cell.
     :param log_dir: str, TensorBoard log directory.
+    :param model_dir: str, Directory where checkpoints of models will
+        be stored.
     :param training_params: dict, hyperparameters used for training.
         batch_size: int, number of samples that will be propagated
             through the network.
@@ -169,6 +177,18 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, log_dir,
                 profile_batch=0,
             )
         )
+    if model_dir is not None:
+        model_path = os.path.join(model_dir, timestamp(), 'model.ckpt')
+        callbacks.append(
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=model_path,
+                monitor='val_loss',
+                save_weights_only=True,
+                save_best_only=True,
+                mode='min',
+                verbose=1
+            )
+        )
 
     # Train model
     model.summary()
@@ -210,6 +230,7 @@ if __name__ == '__main__':
         img_size=args.img_size,
         grid_size=args.grid_size,
         log_dir=args.logdir,
+        model_dir=args.modeldir,
         training_params={
             'batch_size': args.batch_size,
             'epochs': args.epochs
