@@ -186,10 +186,10 @@ class F1Score(Metric):
         )
 
         y_true_xy = true_boxes[..., 1:3]
-        y_true_wh = true_boxes[..., 3:]
+        y_true_wh = true_boxes[..., 3:] * (self.grid_cols, self.grid_rows)
 
         y_pred_xy = pred_boxes[..., 1:3]
-        y_pred_wh = pred_boxes[..., 3:]
+        y_pred_wh = pred_boxes[..., 3:] * (self.grid_cols, self.grid_rows)
 
         intersect_wh = K.maximum(
             K.zeros_like(y_pred_wh),
@@ -229,8 +229,15 @@ class F1Score(Metric):
                dtype=tf.float32)
 
     def result(self):
-        recall = self.true_positives / (self.true_positives +
-                                        self.false_negatives)
-        precision = self.true_positives / (self.true_positives +
-                                           self.false_positives)
-        return 2 * (precision * recall) / (precision + recall)
+        recall = tf.math.divide_no_nan(
+            self.true_positives,
+            self.true_positives + self.false_negatives
+        )
+        precision = tf.math.divide_no_nan(
+            self.true_positives,
+            self.true_positives + self.false_positives
+        )
+        return tf.math.divide_no_nan(
+            2 * precision * recall,
+            precision + recall
+        )
