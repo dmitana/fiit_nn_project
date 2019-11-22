@@ -6,6 +6,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.image as mpimg
 from pycocotools.coco import COCO
+import tensorflow as tf
 
 # Initialize argument parser
 parser = argparse.ArgumentParser(
@@ -48,10 +49,18 @@ parser.add_argument(
          'image has to contain to be added to compressed dataset.'
          'If not provided then all categories will be included.'
 )
+parser.add_argument(
+    '-s', '--img-size',
+    type=int,
+    nargs=2,
+    default=None,
+    help='Resolution to which images will be resized in the format '
+         '`height width`.'
+)
 
 
 def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
-                  n_examples=None, categories=None):
+                  n_examples=None, categories=None, img_size=None):
     """
     Compress given COCO dataset to more readable format.
 
@@ -66,6 +75,7 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
         included.
     :param categories: list, only categories from this list will be
         added to compressed dataset.
+    :param img_size: tuple, contains new height and width of images.
     :return: str, path to the compressed dataset.
     """
     imgs_filenames = sorted(os.listdir(imgs_dir_path))
@@ -89,7 +99,15 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
             img = mpimg.imread(img_file_path)
             if len(img.shape) == 2:
                 img = np.stack((img,) * 3, axis=-1)
-            (height, width, _) = img.shape
+
+            # Resize image
+            (original_height, original_width, _) = img.shape
+            if img_size is not None:
+                img = tf.image.resize(
+                    images=img,
+                    size=img_size,
+                    method=tf.image.ResizeMethod.NEAREST_NEIGHBOR
+                ).numpy()
 
             # Load annotations
             img_id = int(img_filename[:-4])
@@ -105,10 +123,10 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
 
                 # Scale bbox x, y, width, height
                 bbox = [
-                    bbox[0] / width,
-                    bbox[1] / height,
-                    bbox[2] / width,
-                    bbox[3] / height
+                    bbox[0] / original_width,
+                    bbox[1] / original_height,
+                    bbox[2] / original_width,
+                    bbox[3] / original_height
                 ]
 
                 ann_list.append([bbox, label])
@@ -143,6 +161,7 @@ if __name__ == '__main__':
         'target_dir': args.target_dir,
         'name': args.name,
         'n_examples': args.n_examples,
-        'categories': args.categories
+        'categories': args.categories,
+        'img_size': args.img_size,
     }
     compress_coco(**opts)

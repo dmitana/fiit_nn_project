@@ -24,9 +24,11 @@ parser.add_argument(
     help='File path to the train dataset file.'
 )
 parser.add_argument(
-    'img_size',
+    '-s',
+    '--img-size',
     type=int,
     nargs=2,
+    default=None,
     help='Resolution to which images will be resized in the format '
          '`height width`.'
 )
@@ -104,21 +106,13 @@ parser_hparams.add_argument(
 )
 
 
-def train(train_xy, val_xy, model_name, img_size, grid_size, log_dir,
-          model_dir, training_params, model_params):
+def train(train_xy, training_params, model_params, val_xy=None,
+          model_name='base_model', img_size=None, grid_size=(16, 16),
+          log_dir=None, model_dir=None):
     """
     Train an object detection model using YOLO method.
 
     :param train_xy: tuple, train data in the format (imgs, anns).
-    :param val_xy: tuple, validation data in the format (imgs, anns).
-    :param model_name: str, name of the model to be used for training.
-        Possible values are `base_model`.
-    :param img_size: tuple, (img_height, img_width) of each image.
-    :param grid_size: tuple, number of (grid_rows, grid_cols) of grid
-        cell.
-    :param log_dir: str, TensorBoard log directory.
-    :param model_dir: str, Directory where checkpoints of models will
-        be stored.
     :param training_params: dict, hyperparameters used for training.
         batch_size: int, number of samples that will be propagated
             through the network.
@@ -131,6 +125,18 @@ def train(train_xy, val_xy, model_name, img_size, grid_size, log_dir,
             function. Weight of the XY and WH loss.
         l_noobj: float, lambda no object parameter for the YOLO loss
             function. Weight of the one part of the confidence loss.
+    :param val_xy: tuple (default: None), validation data in the format
+        (imgs, anns).
+    :param model_name: str (default: base_model), name of the model to
+        be used for training. Possible values are `base_model`.
+    :param img_size: tuple (default: None), new resolution
+        (new_img_height, new_img_width) of each image. If `None` then
+        images will not be resized.
+    :param grid_size: tuple (default: (16, 16)), number of
+        (grid_rows, grid_cols) of grid cell.
+    :param log_dir: str (default: None), TensorBoard log directory.
+    :param model_dir: str (default: None), Directory where checkpoints
+        of models will be stored.
     :return:
         model: tf.keras.Model, trained model.
         history: History, its History.history attribute is a record of
@@ -225,12 +231,6 @@ if __name__ == '__main__':
 
     train(
         train_xy=train_data,
-        val_xy=val_data,
-        model_name=args.model_name,
-        img_size=args.img_size,
-        grid_size=args.grid_size,
-        log_dir=args.logdir,
-        model_dir=args.modeldir,
         training_params={
             'batch_size': args.batch_size,
             'epochs': args.epochs
@@ -239,5 +239,11 @@ if __name__ == '__main__':
             'learning_rate': args.learning_rate,
             'l_coord': args.lambda_coordinates,
             'l_noobj': args.lambda_no_object,
-        }
+        },
+        val_xy=val_data,
+        model_name=args.model_name,
+        img_size=args.img_size,
+        grid_size=args.grid_size,
+        log_dir=args.logdir,
+        model_dir=args.modeldir,
     )

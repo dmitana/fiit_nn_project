@@ -262,7 +262,12 @@ def create_dataset(x, y, img_size, grid_size, **kwargs):
         (None, grid_rows, grid_cols, 5 + n_classes)).
     """
 
-    new_x = resize_images(x, img_size)
+    if img_size is not None:
+        new_x = resize_images(x, img_size)
+    else:
+        new_x = x
+        img_size = new_x[0].shape[:2]
+
     new_y = calculate_bboxes_middle_points(y)
 
     yolo_anns = np.array([
