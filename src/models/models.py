@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Flatten, Dense, Conv2D, MaxPooling2D, \
     Reshape, Input, LeakyReLU
 from tensorflow.keras.optimizers import Adam
 from src.models.losses import YoloLoss
-from src.models.metrics import MeanAveragePrecision
+from src.models.metrics import F1Score
 
 
 def base_model(grid_size, input_shape=(256, 256, 3), n_categories=0,
@@ -102,7 +102,7 @@ def base_model(grid_size, input_shape=(256, 256, 3), n_categories=0,
             l_coord=hparams['l_coord'],
             l_noobj=hparams['l_noobj']
         ),
-        metrics=[MeanAveragePrecision(iou_threshold=0.5, grid_size=grid_size)]
+        metrics=[F1Score(iou_threshold=0.5, grid_size=grid_size)]
     )
 
     return model
