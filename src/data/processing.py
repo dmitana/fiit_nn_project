@@ -67,8 +67,8 @@ def _encode_yolo_grid_bbox(middle_point, bbox_resolution, img_size, grid):
     return (
         (mp_x * img_width - grid_x) / grid_width,
         (mp_y * img_height - grid_y) / grid_height,
-        bbox_width * img_width / grid_width,
-        bbox_height * img_height / grid_height,
+        bbox_width,
+        bbox_height
     )
 
 
@@ -92,8 +92,8 @@ def _decode_yolo_grid_bbox(yolo_grid_bbox, img_size, grid):
     mp_x = bx * grid_width + grid_x
     mp_y = by * grid_height + grid_y
     middle_point = (mp_x / img_width, mp_y / img_height)
-    bbox_width = bw * grid_width / img_width
-    bbox_height = bh * grid_height / img_height
+    bbox_width = bw
+    bbox_height = bh
 
     return (
         bbox_from_middle_point(middle_point, bbox_width, bbox_height),

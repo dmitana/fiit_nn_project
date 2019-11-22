@@ -63,11 +63,11 @@ class YoloLoss(Loss):
 
         y_true_conf = true_boxes[..., 0]
         y_true_xy = true_boxes[..., 1:3]
-        y_true_wh = true_boxes[..., 3:]
+        y_true_wh = true_boxes[..., 3:] * (self.grid_cols, self.grid_rows)
 
         y_pred_conf = pred_boxes[..., 0]
         y_pred_xy = pred_boxes[..., 1:3]
-        y_pred_wh = pred_boxes[..., 3:]
+        y_pred_wh = pred_boxes[..., 3:] * (self.grid_cols, self.grid_rows)
 
         # XY loss
         xy_loss = self.l_coord * K.sum(
