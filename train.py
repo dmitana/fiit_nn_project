@@ -212,12 +212,24 @@ def train(train_xy, training_params, model_params, val_xy=None,
         with tf.summary.create_file_writer(log_dir_hparams).as_default():
             hp.hparams({**training_params, **model_params}, trial_id=log_dir)
 
-            train_best_loss = min(history.history["loss"][-5:])
+            train_best_loss = min(history.history['loss'])
+            train_best_f1_score = max(history.history['F1Score'])
             tf.summary.scalar('train_best_loss', train_best_loss, step=0)
+            tf.summary.scalar(
+                'train_best_f1_score',
+                train_best_f1_score,
+                step=0
+            )
 
             if val_dataset is not None:
-                val_best_loss = min(history.history['val_loss'][-5:])
+                val_best_loss = min(history.history['val_loss'])
+                val_best_f1_score = max(history.history['val_F1Score'])
                 tf.summary.scalar('val_best_loss', val_best_loss, step=0)
+                tf.summary.scalar(
+                    'val_best_f1_score',
+                    val_best_f1_score,
+                    step=0
+                )
 
     return model, history
 
