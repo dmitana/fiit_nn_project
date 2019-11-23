@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
-from src.models.models import base_model
+from src.models.models import base_model, darknet19_model
 from src.utils import timestamp
 
 
@@ -169,6 +169,8 @@ def train(train_xy, training_params, model_params, val_xy=None,
     # Choose model
     if model_name == 'base_model':
         model = base_model(grid_size, **model_params)
+    if model_name == 'darknet19_model':
+        model = darknet19_model(grid_size, **model_params)
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
@@ -237,7 +239,9 @@ def train(train_xy, training_params, model_params, val_xy=None,
 if __name__ == '__main__':
     args = parser.parse_args()
 
+    print('Load train data')
     train_data = load_dataset(args.train_dataset_file_path)
+    print('Load validation data')
     val_data = None if args.validation_dataset_file_path is None \
         else load_dataset(args.validation_dataset_file_path)
 
