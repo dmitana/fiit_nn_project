@@ -1,5 +1,6 @@
 from tensorflow.keras.losses import Loss
 import tensorflow.keras.backend as K
+import tensorflow as tf
 
 
 class YoloLoss(Loss):
@@ -117,4 +118,4 @@ class YoloLoss(Loss):
         conf_loss = conf_loss1 + conf_loss2
 
         loss_sum = xy_loss + wh_loss + conf_loss
-        return loss_sum / K.cast(K.shape(y_true)[0], dtype='float32')
+        return tf.math.reduce_mean(loss_sum)
