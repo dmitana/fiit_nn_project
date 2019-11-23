@@ -34,52 +34,60 @@ def base_model(grid_size, input_shape=(256, 256, 3), n_categories=0,
     (grid_rows, grid_cols) = grid_size
 
     inputs = Input(input_shape)
+
+    # Layer 1
     x = Conv2D(
         filters=16,
         kernel_size=1,
         activation='relu',
+        padding='same',
         name='conv_1',
     )(inputs)
+
+    # Layer 2
     x = Conv2D(
         filters=32,
         kernel_size=3,
         activation='relu',
+        padding='same',
         name='conv_2',
-    )(x)
-    x = LeakyReLU(
-        alpha=0.3,
-        name='leaky_relu_1',
     )(x)
     x = MaxPooling2D(
         pool_size=(2, 2),
         name='max_pooling_1',
     )(x)
+
+    # Layer 3
     x = Conv2D(
         filters=16,
         kernel_size=3,
         activation='relu',
+        padding='same',
         name='conv_3',
     )(x)
+
+    # Layer 4
     x = Conv2D(
         filters=32,
         kernel_size=3,
         activation='relu',
+        padding='same',
         name='conv_4',
-    )(x)
-    x = LeakyReLU(
-        alpha=0.3,
-        name='leaky_relu_2',
     )(x)
     x = MaxPooling2D(
         pool_size=(2, 2),
         name='max_pooling_2',
     )(x)
+
+    # Layer 5
     x = Flatten(name='flatten')(x)
     x = Dense(
         units=256,
         activation='sigmoid',
         name='dense_1',
     )(x)
+
+    # Layer 6
     x = Dense(
         units=grid_rows * grid_cols * (5 + n_categories),
         activation='sigmoid',
@@ -299,60 +307,60 @@ def darknet19_model(grid_size, input_shape=(256, 256, 3), n_categories=0,
         name='max_pool_5',
     )(x)
 
-    # Layer 14
-    x = Conv2D(
-        filters=1024,
-        kernel_size=3,
-        padding='same',
-        activation=act,
-        name='conv_14',
-    )(x)
-    x = BatchNormalization(name='bn_14')(x)
-    x = LeakyReLU(alpha=0.1)(x)
+    # # Layer 14
+    # x = Conv2D(
+    #     filters=1024,
+    #     kernel_size=3,
+    #     padding='same',
+    #     activation=act,
+    #     name='conv_14',
+    # )(x)
+    # x = BatchNormalization(name='bn_14')(x)
+    # x = LeakyReLU(alpha=0.1)(x)
 
-    # Layer 15
-    x = Conv2D(
-        filters=512,
-        kernel_size=1,
-        padding='same',
-        activation=act,
-        name='conv_15',
-    )(x)
-    x = BatchNormalization(name='bn_15')(x)
-    x = LeakyReLU(alpha=0.1)(x)
+    # # Layer 15
+    # x = Conv2D(
+    #     filters=512,
+    #     kernel_size=1,
+    #     padding='same',
+    #     activation=act,
+    #     name='conv_15',
+    # )(x)
+    # x = BatchNormalization(name='bn_15')(x)
+    # x = LeakyReLU(alpha=0.1)(x)
 
-    # Layer 16
-    x = Conv2D(
-        filters=1024,
-        kernel_size=3,
-        padding='same',
-        activation=act,
-        name='conv_16',
-    )(x)
-    x = BatchNormalization(name='bn_16')(x)
-    x = LeakyReLU(alpha=0.1)(x)
+    # # Layer 16
+    # x = Conv2D(
+    #     filters=1024,
+    #     kernel_size=3,
+    #     padding='same',
+    #     activation=act,
+    #     name='conv_16',
+    # )(x)
+    # x = BatchNormalization(name='bn_16')(x)
+    # x = LeakyReLU(alpha=0.1)(x)
 
-    # Layer 17
-    x = Conv2D(
-        filters=512,
-        kernel_size=1,
-        padding='same',
-        activation=act,
-        name='conv_17',
-    )(x)
-    x = BatchNormalization(name='bn_17')(x)
-    x = LeakyReLU(alpha=0.1)(x)
+    # # Layer 17
+    # x = Conv2D(
+    #     filters=512,
+    #     kernel_size=1,
+    #     padding='same',
+    #     activation=act,
+    #     name='conv_17',
+    # )(x)
+    # x = BatchNormalization(name='bn_17')(x)
+    # x = LeakyReLU(alpha=0.1)(x)
 
-    # Layer 18
-    x = Conv2D(
-        filters=1024,
-        kernel_size=3,
-        padding='same',
-        activation=act,
-        name='conv_18',
-    )(x)
-    x = BatchNormalization(name='bn_18')(x)
-    x = LeakyReLU(alpha=0.1)(x)
+    # # Layer 18
+    # x = Conv2D(
+    #     filters=1024,
+    #     kernel_size=3,
+    #     padding='same',
+    #     activation=act,
+    #     name='conv_18',
+    # )(x)
+    # x = BatchNormalization(name='bn_18')(x)
+    # x = LeakyReLU(alpha=0.1)(x)
 
     # Layer 19
     outputs = Conv2D(
