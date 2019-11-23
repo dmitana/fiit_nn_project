@@ -264,17 +264,21 @@ def create_dataset(x, y, img_size, grid_size, **kwargs):
 
     if img_size is not None:
         new_x = resize_images(x, img_size)
+        print('Resize images')
     else:
         new_x = x
         img_size = new_x[0].shape[:2]
 
+    print('Calculate bboxes middle points')
     new_y = calculate_bboxes_middle_points(y)
 
+    print('Creeate yolo vector')
     yolo_anns = np.array([
         encode_anns_to_yolo(anns, img_size, grid_size)
         for anns in new_y
     ])
 
+    print('Create dataset')
     dataset = input_fn(
         new_x,
         yolo_anns,
