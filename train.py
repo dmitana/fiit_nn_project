@@ -4,7 +4,7 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
-from src.models.models import base_model, darknet19_model
+from src.models.models import base_model, darknet19_model, darknet19_model_2
 from src.utils import timestamp
 
 
@@ -171,6 +171,8 @@ def train(train_xy, training_params, model_params, val_xy=None,
         model = base_model(grid_size, **model_params)
     elif model_name == 'darknet19_model':
         model = darknet19_model(grid_size, **model_params)
+    elif model_name == 'darknet19_model_2':
+        model = darknet19_model_2(grid_size, **model_params)
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
