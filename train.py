@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
-from src.models.models import base_model, darknet19_model, darknet19_model_2
+from src.models.models import base_model, darknet19_model
 from src.utils import timestamp
 
 
