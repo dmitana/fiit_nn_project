@@ -1,5 +1,6 @@
 import argparse
 import os
+from functools import partial
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
@@ -51,6 +52,13 @@ parser.add_argument(
     default=None,
     help='Directory where checkpoints of models will be stored.'
 )
+parser.add_argument(
+    '--user-lr-scheduler',
+    type=bool,
+    default=False,
+    help='Whether to use learning rate scheduler or not (default: '
+         '%(default)s).'
+)
 
 parser_hparams = parser.add_argument_group('Hyperparameters')
 parser_hparams.add_argument(
@@ -90,6 +98,12 @@ parser_hparams.add_argument(
          '(default: %(default)s).',
 )
 parser_hparams.add_argument(
+    '--bn-momentum',
+    type=float,
+    default=0.9,
+    help='Momentum of batch normalization for the moving average'
+)
+parser_hparams.add_argument(
     '--lambda-coordinates',
     type=float,
     default=5.0,
@@ -106,9 +120,16 @@ parser_hparams.add_argument(
 )
 
 
+def lr_scheduler(epoch, initial_lr):
+    if epoch < 50:
+        return initial_lr
+    else:
+        return 0.00001
+
+
 def train(train_xy, training_params, model_params, val_xy=None,
           model_name='base_model', img_size=None, grid_size=(16, 16),
-          log_dir=None, model_dir=None):
+          log_dir=None, model_dir=None, use_lr_scheduler=False):
     """
     Train an object detection model using YOLO method.
 
@@ -137,6 +158,8 @@ def train(train_xy, training_params, model_params, val_xy=None,
     :param log_dir: str (default: None), TensorBoard log directory.
     :param model_dir: str (default: None), Directory where checkpoints
         of models will be stored.
+    :param use_lr_scheduler: bool (default: False), whether to use
+        learning rate scheduler or not.
     :return:
         model: tf.keras.Model, trained model.
         history: History, its History.history attribute is a record of
@@ -167,12 +190,17 @@ def train(train_xy, training_params, model_params, val_xy=None,
         )
 
     # Choose model
+    input_shape = train_xy[0].shape[1:]
     if model_name == 'base_model':
-        model = base_model(grid_size, **model_params)
+        model = base_model(grid_size, input_shape=input_shape, **model_params)
     elif model_name == 'darknet19_model':
-        model = darknet19_model(grid_size, **model_params)
+        model = darknet19_model(
+            grid_size,
+            input_shape=input_shape,
+            **model_params
+        )
     elif model_name == 'darknet19_model_2':
-        model = darknet19_model_2(grid_size, **model_params)
+        model = darknet19_model_2(grid_size, input_shape=input_shape, **model_params)
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
@@ -199,6 +227,14 @@ def train(train_xy, training_params, model_params, val_xy=None,
                 verbose=1
             )
         )
+    if use_lr_scheduler:
+        fn_scheduler = partial(
+            lr_scheduler,
+            initial_lr=model_params['learning_rate']
+        )
+        callbacks.append(tf.keras.callbacks.LearningRateScheduler(
+            fn_scheduler
+        ))
 
     # Train model
     model.summary()
@@ -255,6 +291,7 @@ if __name__ == '__main__':
         },
         model_params={
             'learning_rate': args.learning_rate,
+            'bn_momentum': args.bn_momentum,
             'l_coord': args.lambda_coordinates,
             'l_noobj': args.lambda_no_object,
         },
@@ -264,4 +301,5 @@ if __name__ == '__main__':
         grid_size=args.grid_size,
         log_dir=args.logdir,
         model_dir=args.modeldir,
+        use_lr_scheduler=args.use_lr_scheduler,
     )
