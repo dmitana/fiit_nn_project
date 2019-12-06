@@ -199,8 +199,6 @@ def train(train_xy, training_params, model_params, val_xy=None,
             input_shape=input_shape,
             **model_params
         )
-    elif model_name == 'darknet19_model_2':
-        model = darknet19_model_2(grid_size, input_shape=input_shape, **model_params)
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
