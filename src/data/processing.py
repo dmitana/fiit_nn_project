@@ -227,7 +227,7 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
 
     # Shuffle and repeat
     if is_training:
-        dataset = dataset.shuffle(buffer_size=len(anns)).repeat()
+        dataset = dataset.shuffle(buffer_size=1000).repeat()
 
     # Batch
     dataset = dataset.batch(
