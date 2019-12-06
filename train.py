@@ -121,10 +121,9 @@ parser_hparams.add_argument(
 
 
 def lr_scheduler(epoch, initial_lr):
-    if epoch < 50:
-        return initial_lr
-    else:
-        return 0.00001
+    if epoch in [20, 30, 40, 50]:
+        return initial_lr * 10
+    return initial_lr
 
 
 def train(train_xy, training_params, model_params, val_xy=None,
