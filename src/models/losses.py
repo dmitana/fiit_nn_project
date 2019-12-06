@@ -110,6 +110,7 @@ class YoloLoss(Loss):
         # tf.print(aux)
         conf_loss2 = self.l_noobj * K.sum(
             K.square(y_pred_conf - iou) * aux,
+            # K.square(y_pred_conf - iou) * (1 - y_true_conf),
             axis=-1
         )
         conf_loss = conf_loss1 + conf_loss2
