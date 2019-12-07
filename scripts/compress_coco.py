@@ -57,10 +57,18 @@ parser.add_argument(
     help='Resolution to which images will be resized in the format '
          '`height width`.'
 )
+parser.add_argument(
+    '-r', '--reverse',
+    action='store_true',
+    help='Flag which specifies whether images will be loaded in '
+         'ascending or descending order. If not used, default is '
+         'ascending order. '
+)
 
 
 def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
-                  n_examples=None, categories=None, img_size=None):
+                  n_examples=None, categories=None, img_size=None,
+                  reverse=False):
     """
     Compress given COCO dataset to more readable format.
 
@@ -78,7 +86,7 @@ def compress_coco(imgs_dir_path, anns_file_path, target_dir, name,
     :param img_size: tuple, contains new height and width of images.
     :return: str, path to the compressed dataset.
     """
-    imgs_filenames = sorted(os.listdir(imgs_dir_path))
+    imgs_filenames = sorted(os.listdir(imgs_dir_path), reverse=reverse)
 
     c = COCO(annotation_file=anns_file_path)
     x, y = [], []
@@ -163,5 +171,6 @@ if __name__ == '__main__':
         'n_examples': args.n_examples,
         'categories': args.categories,
         'img_size': args.img_size,
+        'reverse': args.reverse
     }
     compress_coco(**opts)
