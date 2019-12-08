@@ -221,7 +221,8 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
     """
 
     # Normalize to (0.0, 1.0)
-    imgs = imgs / 255
+    # imgs = imgs.astype(np.float32)
+    # imgs = imgs / 255.0
 
     dataset = tf.data.Dataset.from_tensor_slices((imgs, anns))
 
@@ -229,11 +230,18 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
     if is_training:
         dataset = dataset.shuffle(buffer_size=1000).repeat()
 
+    # Map
+    dataset = dataset.map(
+            lambda x, y: (tf.divide(tf.cast(x, dtype=tf.float32), tf.constant(255.0, dtype=tf.float32)), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
+    )
+
     # Batch
     dataset = dataset.batch(
         batch_size,
         drop_remainder=False
     )
+
 
     # Prefetch
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
