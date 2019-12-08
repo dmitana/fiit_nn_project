@@ -83,7 +83,7 @@ class YoloLoss(Loss):
         # WH loss
         wh_loss = self.l_coord * K.sum(
             K.sum(
-                K.square(K.sqrt(y_pred_wh) - K.sqrt(y_true_wh)),
+                K.square(K.sqrt(y_pred_wh + K.epsilon()) - K.sqrt(y_true_wh + K.epsilon())),
                 axis=-1
             )
             * y_true_conf,
