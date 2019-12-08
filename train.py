@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
-from src.models.models import base_model, darknet19_model
+from src.models.models import base_model, darknet19_model, darknet19_model_resnet
 from src.utils import timestamp
 
 
@@ -53,11 +53,10 @@ parser.add_argument(
     help='Directory where checkpoints of models will be stored.'
 )
 parser.add_argument(
-    '--user-lr-scheduler',
-    type=bool,
-    default=False,
+    '--use-lr-scheduler',
+    action='store_true',
     help='Whether to use learning rate scheduler or not (default: '
-         '%(default)s).'
+         'False).'
 )
 
 parser_hparams = parser.add_argument_group('Hyperparameters')
@@ -198,6 +197,13 @@ def train(train_xy, training_params, model_params, val_xy=None,
             input_shape=input_shape,
             **model_params
         )
+    elif model_name == 'darknet19_model_resnet':
+        model = darknet19_model_resnet(
+            grid_size,
+            input_shape=input_shape,
+            **model_params
+        )
+
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
@@ -234,39 +240,42 @@ def train(train_xy, training_params, model_params, val_xy=None,
         ))
 
     # Train model
-    model.summary()
-    history = model.fit(
-        train_dataset,
-        epochs=training_params['epochs'],
-        validation_data=val_dataset,
-        steps_per_epoch=len(train_xy[1]) // training_params['batch_size'],
-        callbacks=callbacks,
-    )
+    history = None
+    try:
+        model.summary()
+        history = model.fit(
+            train_dataset,
+            epochs=training_params['epochs'],
+            validation_data=val_dataset,
+            steps_per_epoch=len(train_xy[1]) // training_params['batch_size'],
+            callbacks=callbacks,
+        )
+    finally:
+        # TensorBoard HParams saving
+        if log_dir is not None:
+            log_dir_hparams = os.path.join(log_dir, 'hparams')
+            with tf.summary.create_file_writer(log_dir_hparams).as_default():
+                hp.hparams({**training_params, **model_params}, trial_id=log_dir)
+                
+                if history is not None:
+                    train_best_loss = min(history.history['loss'])
+                    train_best_f1_score = max(history.history['F1Score'])
+                    tf.summary.scalar('train_best_loss', train_best_loss, step=0)
+                    tf.summary.scalar(
+                        'train_best_f1_score',
+                        train_best_f1_score,
+                        step=0
+                    )
 
-    # TensorBoard HParams saving
-    if log_dir is not None:
-        log_dir_hparams = os.path.join(log_dir, 'hparams')
-        with tf.summary.create_file_writer(log_dir_hparams).as_default():
-            hp.hparams({**training_params, **model_params}, trial_id=log_dir)
-
-            train_best_loss = min(history.history['loss'])
-            train_best_f1_score = max(history.history['F1Score'])
-            tf.summary.scalar('train_best_loss', train_best_loss, step=0)
-            tf.summary.scalar(
-                'train_best_f1_score',
-                train_best_f1_score,
-                step=0
-            )
-
-            if val_dataset is not None:
-                val_best_loss = min(history.history['val_loss'])
-                val_best_f1_score = max(history.history['val_F1Score'])
-                tf.summary.scalar('val_best_loss', val_best_loss, step=0)
-                tf.summary.scalar(
-                    'val_best_f1_score',
-                    val_best_f1_score,
-                    step=0
-                )
+                    if val_dataset is not None:
+                        val_best_loss = min(history.history['val_loss'])
+                        val_best_f1_score = max(history.history['val_F1Score'])
+                        tf.summary.scalar('val_best_loss', val_best_loss, step=0)
+                        tf.summary.scalar(
+                            'val_best_f1_score',
+                            val_best_f1_score,
+                            step=0
+                        )
 
     return model, history
 
