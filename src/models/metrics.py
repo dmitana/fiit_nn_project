@@ -201,8 +201,8 @@ class F1Score(Metric):
         union_area = pred_area + true_area - intersect_area
         return intersect_area / union_area
 
-    def _classify_prediction(self, iou, true_confidence):
-        if iou >= self.iou_threshold:
+    def _classify_prediction(self, iou, true_confidence, pred_confidence):
+        if iou >= self.iou_threshold and pred_confidence >= self.iou_threshold:
             if true_confidence == 1.0:
                 self.true_positives.assign_add(1)
             else:
@@ -220,12 +220,17 @@ class F1Score(Metric):
             x=y_true[..., :5],
             shape=(-1, self.grid_rows * self.grid_cols, 5)
         )
+        pred_boxes = K.reshape(
+            x=y_pred[..., :5],
+            shape=(-1, self.grid_rows * self.grid_cols, 5)
+        )
 
         reshaped_batch_iou = reshape(batch_iou, shape=[-1])
         reshaped_true_conf = reshape(true_boxes[..., 0], shape=[-1])
+        reshaped_pred_conf = reshape(pred_boxes[..., 0], shape=[-1])
 
-        map_fn(lambda x: self._classify_prediction(x[0], x[1]),
-               [reshaped_batch_iou, reshaped_true_conf],
+        map_fn(lambda x: self._classify_prediction(x[0], x[1], x[2]),
+               [reshaped_batch_iou, reshaped_true_conf, reshaped_pred_conf],
                dtype=tf.float32)
 
     def result(self):
