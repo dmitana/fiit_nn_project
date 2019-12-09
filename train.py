@@ -1,10 +1,11 @@
 import argparse
 import os
+from functools import partial
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 from src.data.load_data import load_dataset
 from src.data.processing import create_dataset
-from src.models.models import base_model, darknet19_model
+from src.models.models import base_model, darknet19_model, darknet19_model_resnet
 from src.utils import timestamp
 
 
@@ -51,6 +52,12 @@ parser.add_argument(
     default=None,
     help='Directory where checkpoints of models will be stored.'
 )
+parser.add_argument(
+    '--use-lr-scheduler',
+    action='store_true',
+    help='Whether to use learning rate scheduler or not (default: '
+         'False).'
+)
 
 parser_hparams = parser.add_argument_group('Hyperparameters')
 parser_hparams.add_argument(
@@ -90,6 +97,12 @@ parser_hparams.add_argument(
          '(default: %(default)s).',
 )
 parser_hparams.add_argument(
+    '--bn-momentum',
+    type=float,
+    default=0.9,
+    help='Momentum of batch normalization for the moving average'
+)
+parser_hparams.add_argument(
     '--lambda-coordinates',
     type=float,
     default=5.0,
@@ -106,9 +119,15 @@ parser_hparams.add_argument(
 )
 
 
+def lr_scheduler(epoch, initial_lr):
+    if epoch in [20, 30, 40, 50]:
+        return initial_lr * 10
+    return initial_lr
+
+
 def train(train_xy, training_params, model_params, val_xy=None,
           model_name='base_model', img_size=None, grid_size=(16, 16),
-          log_dir=None, model_dir=None):
+          log_dir=None, model_dir=None, use_lr_scheduler=False):
     """
     Train an object detection model using YOLO method.
 
@@ -137,6 +156,8 @@ def train(train_xy, training_params, model_params, val_xy=None,
     :param log_dir: str (default: None), TensorBoard log directory.
     :param model_dir: str (default: None), Directory where checkpoints
         of models will be stored.
+    :param use_lr_scheduler: bool (default: False), whether to use
+        learning rate scheduler or not.
     :return:
         model: tf.keras.Model, trained model.
         history: History, its History.history attribute is a record of
@@ -167,10 +188,22 @@ def train(train_xy, training_params, model_params, val_xy=None,
         )
 
     # Choose model
+    input_shape = train_xy[0].shape[1:]
     if model_name == 'base_model':
-        model = base_model(grid_size, **model_params)
+        model = base_model(grid_size, input_shape=input_shape, **model_params)
     elif model_name == 'darknet19_model':
-        model = darknet19_model(grid_size, **model_params)
+        model = darknet19_model(
+            grid_size,
+            input_shape=input_shape,
+            **model_params
+        )
+    elif model_name == 'darknet19_model_resnet':
+        model = darknet19_model_resnet(
+            grid_size,
+            input_shape=input_shape,
+            **model_params
+        )
+
     else:
         raise ValueError(f'Error: undefined model `{model_name}`.')
 
@@ -197,41 +230,52 @@ def train(train_xy, training_params, model_params, val_xy=None,
                 verbose=1
             )
         )
+    if use_lr_scheduler:
+        fn_scheduler = partial(
+            lr_scheduler,
+            initial_lr=model_params['learning_rate']
+        )
+        callbacks.append(tf.keras.callbacks.LearningRateScheduler(
+            fn_scheduler
+        ))
 
     # Train model
-    model.summary()
-    history = model.fit(
-        train_dataset,
-        epochs=training_params['epochs'],
-        validation_data=val_dataset,
-        steps_per_epoch=len(train_xy[1]) // training_params['batch_size'],
-        callbacks=callbacks,
-    )
+    history = None
+    try:
+        model.summary()
+        history = model.fit(
+            train_dataset,
+            epochs=training_params['epochs'],
+            validation_data=val_dataset,
+            steps_per_epoch=len(train_xy[1]) // training_params['batch_size'],
+            callbacks=callbacks,
+        )
+    finally:
+        # TensorBoard HParams saving
+        if log_dir is not None:
+            log_dir_hparams = os.path.join(log_dir, 'hparams')
+            with tf.summary.create_file_writer(log_dir_hparams).as_default():
+                hp.hparams({**training_params, **model_params}, trial_id=log_dir)
+                
+                if history is not None:
+                    train_best_loss = min(history.history['loss'])
+                    train_best_f1_score = max(history.history['F1Score'])
+                    tf.summary.scalar('train_best_loss', train_best_loss, step=0)
+                    tf.summary.scalar(
+                        'train_best_f1_score',
+                        train_best_f1_score,
+                        step=0
+                    )
 
-    # TensorBoard HParams saving
-    if log_dir is not None:
-        log_dir_hparams = os.path.join(log_dir, 'hparams')
-        with tf.summary.create_file_writer(log_dir_hparams).as_default():
-            hp.hparams({**training_params, **model_params}, trial_id=log_dir)
-
-            train_best_loss = min(history.history['loss'])
-            train_best_f1_score = max(history.history['F1Score'])
-            tf.summary.scalar('train_best_loss', train_best_loss, step=0)
-            tf.summary.scalar(
-                'train_best_f1_score',
-                train_best_f1_score,
-                step=0
-            )
-
-            if val_dataset is not None:
-                val_best_loss = min(history.history['val_loss'])
-                val_best_f1_score = max(history.history['val_F1Score'])
-                tf.summary.scalar('val_best_loss', val_best_loss, step=0)
-                tf.summary.scalar(
-                    'val_best_f1_score',
-                    val_best_f1_score,
-                    step=0
-                )
+                    if val_dataset is not None:
+                        val_best_loss = min(history.history['val_loss'])
+                        val_best_f1_score = max(history.history['val_F1Score'])
+                        tf.summary.scalar('val_best_loss', val_best_loss, step=0)
+                        tf.summary.scalar(
+                            'val_best_f1_score',
+                            val_best_f1_score,
+                            step=0
+                        )
 
     return model, history
 
@@ -253,6 +297,7 @@ if __name__ == '__main__':
         },
         model_params={
             'learning_rate': args.learning_rate,
+            'bn_momentum': args.bn_momentum,
             'l_coord': args.lambda_coordinates,
             'l_noobj': args.lambda_no_object,
         },
@@ -262,4 +307,5 @@ if __name__ == '__main__':
         grid_size=args.grid_size,
         log_dir=args.logdir,
         model_dir=args.modeldir,
+        use_lr_scheduler=args.use_lr_scheduler,
     )

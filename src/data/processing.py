@@ -66,9 +66,13 @@ def _encode_yolo_grid_bbox(middle_point, bbox_resolution, img_size, grid):
 
     return (
         (mp_x * img_width - grid_x) / grid_width,
+        # (mp_x * img_width) / (grid_width),
         (mp_y * img_height - grid_y) / grid_height,
+        # (mp_y * img_height) / (grid_height),
         bbox_width,
-        bbox_height
+        # (bbox_width * img_width) / (grid_width),
+        bbox_height,
+        # (bbox_height * img_height) / (grid_height)
     )
 
 
@@ -90,10 +94,14 @@ def _decode_yolo_grid_bbox(yolo_grid_bbox, img_size, grid):
     (grid_x, grid_y, grid_width, grid_height) = grid
 
     mp_x = bx * grid_width + grid_x
+    # mp_x = bx * (grid_width)
     mp_y = by * grid_height + grid_y
+    # mp_y = by * (grid_height)
     middle_point = (mp_x / img_width, mp_y / img_height)
     bbox_width = bw
+    # bbox_width = bw * (grid_width) / img_width
     bbox_height = bh
+    # bbox_height = bh * (grid_height) / img_height
 
     return (
         bbox_from_middle_point(middle_point, bbox_width, bbox_height),
@@ -121,7 +129,6 @@ def encode_anns_to_yolo(anns, img_size, grid_size, categories=None):
     grid_width = int(img_width / grid_cols)
 
     categories_len = 0 if categories is None else len(categories)
-
     grid_arr = []
     for grid_y in range(0, img_height, grid_height):
         yolo_arr = []
@@ -214,19 +221,27 @@ def input_fn(imgs, anns, is_training=True, batch_size=16):
     """
 
     # Normalize to (0.0, 1.0)
-    imgs = imgs / 255
+    # imgs = imgs.astype(np.float32)
+    # imgs = imgs / 255.0
 
     dataset = tf.data.Dataset.from_tensor_slices((imgs, anns))
 
     # Shuffle and repeat
     if is_training:
-        dataset = dataset.shuffle(buffer_size=len(anns)).repeat()
+        dataset = dataset.shuffle(buffer_size=1000).repeat()
+
+    # Map
+    dataset = dataset.map(
+            lambda x, y: (tf.divide(tf.cast(x, dtype=tf.float32), tf.constant(255.0, dtype=tf.float32)), y),
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
+    )
 
     # Batch
     dataset = dataset.batch(
         batch_size,
         drop_remainder=False
     )
+
 
     # Prefetch
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
