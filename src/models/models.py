@@ -836,11 +836,12 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
 
     # Layer 23
     x = Flatten(name='flatten')(x)
-    # x = Dense(
-    #     units=256,
-    #     activation='sigmoid',
-    #     name='dense_1',
-    # )(x)
+    x = Dense(
+        units=512,
+        activation=None,
+        name='dense_1',
+    )(x)
+    x = LeakyReLU(alpha=0.1)(x)
 
     # Layer 24
     x = Dense(
@@ -864,8 +865,8 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
             grid_size,
             l_coord=hparams['l_coord'],
             l_noobj=hparams['l_noobj']
-        ),
-        metrics=[F1Score(iou_threshold=0.5, grid_size=grid_size)]
+        )
+#        metrics=[F1Score(iou_threshold=0.5, grid_size=grid_size)]
     )
 
     return model

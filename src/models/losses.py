@@ -102,17 +102,25 @@ class YoloLoss(Loss):
         iou = tf.math.divide_no_nan(intersect_area, union_area)
 
         # TODO:  conf loss could be wrong
+#        conf_loss1 = K.sum(
+#            K.square(y_pred_conf - iou) * y_true_conf,
+#            axis=-1
+#        )
+#        aux = tf.cast(iou < 0.5, dtype='float32') * (1 - y_true_conf)
+#        # tf.print(aux)
+#        conf_loss2 = self.l_noobj * K.sum(
+#            K.square(y_pred_conf - iou) * aux,
+#            # K.square(y_pred_conf - iou) * (1 - y_true_conf),
+#            axis=-1
+#        )
         conf_loss1 = K.sum(
-            K.square(y_pred_conf - iou) * y_true_conf,
+            K.square(y_pred_conf - iou * y_true_conf) * y_true_conf,
             axis=-1
         )
-        aux = tf.cast(iou < 0.5, dtype='float32') * (1 - y_true_conf)
-        # tf.print(aux)
         conf_loss2 = self.l_noobj * K.sum(
-            K.square(y_pred_conf - iou) * aux,
-            # K.square(y_pred_conf - iou) * (1 - y_true_conf),
+            K.square(y_pred_conf - iou * y_true_conf) * K.abs(1 - y_true_conf),
             axis=-1
-        )
+        )       
         conf_loss = conf_loss1 + conf_loss2
 
         loss_sum = xy_loss + wh_loss + conf_loss
