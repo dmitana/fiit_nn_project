@@ -776,7 +776,7 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
     skip_connection = x
     # Layer 19
     x = Conv2D(
-        filters=256,
+        filters=1024,
         kernel_size=3,
         padding='same',
         activation=act,
@@ -787,7 +787,7 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
 
     # Layer 20
     x = Conv2D(
-        filters=128,
+        filters=1024,
         kernel_size=3,
         padding='same',
         activation=act,
@@ -805,7 +805,7 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
     skip_connection = x
     # Layer 21
     x = Conv2D(
-        filters=256,
+        filters=1024,
         kernel_size=3,
         padding='same',
         activation=act,
@@ -815,7 +815,7 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
     x = LeakyReLU(alpha=0.1)(x)
 
     x = Conv2D(
-        filters=128,
+        filters=1024,
         kernel_size=3,
         padding='same',
         activation=act,
@@ -860,7 +860,7 @@ def darknet19_model_resnet(grid_size, input_shape, n_categories=0,
         name='darknet19_model',
     )
     model.compile(
-        optimizer=Adam(learning_rate=hparams['learning_rate']),
+        optimizer=Adam(learning_rate=hparams['learning_rate'], clipvalue=0.01),
         loss=YoloLoss(
             grid_size,
             l_coord=hparams['l_coord'],

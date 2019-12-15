@@ -120,7 +120,7 @@ parser_hparams.add_argument(
 
 
 def lr_scheduler(epoch, initial_lr):
-    if epoch in [20, 30, 40, 50]:
+    if epoch in [5, 10, 15]:
         return initial_lr * 10
     return initial_lr
 
@@ -259,23 +259,23 @@ def train(train_xy, training_params, model_params, val_xy=None,
                 
                 if history is not None:
                     train_best_loss = min(history.history['loss'])
-                    train_best_f1_score = max(history.history['F1Score'])
+                    # train_best_f1_score = max(history.history['F1Score'])
                     tf.summary.scalar('train_best_loss', train_best_loss, step=0)
-                    tf.summary.scalar(
-                        'train_best_f1_score',
-                        train_best_f1_score,
-                        step=0
-                    )
+                    # tf.summary.scalar(
+                    #     'train_best_f1_score',
+                    #     train_best_f1_score,
+                    #     step=0
+                    # )
 
                     if val_dataset is not None:
                         val_best_loss = min(history.history['val_loss'])
-                        val_best_f1_score = max(history.history['val_F1Score'])
+                        # val_best_f1_score = max(history.history['val_F1Score'])
                         tf.summary.scalar('val_best_loss', val_best_loss, step=0)
-                        tf.summary.scalar(
-                            'val_best_f1_score',
-                            val_best_f1_score,
-                            step=0
-                        )
+                        # tf.summary.scalar(
+                        #     'val_best_f1_score',
+                        #     val_best_f1_score,
+                        #     step=0
+                        # )
 
     return model, history
 
