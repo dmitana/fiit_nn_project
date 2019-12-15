@@ -46,7 +46,8 @@ def plot_img_with_bboxes(img, anns, true_anns=None, show_category=True, grid=Non
     ax.imshow(img)
 
     plot_anns(anns)
-    plot_anns(true_anns, color='g')
+    if true_anns is not None:
+        plot_anns(true_anns, color='g')
 
     if grid:
         (grid_height, grid_width) = grid if type(grid) in (tuple, list) else \
